@@ -32,6 +32,10 @@ class Player(Turtle):
         self.st()
         screen.onkeypress(self.turn_left, left_key)
         screen.onkeypress(self.turn_right, right_key)
+        screen.onkeypress(self.fire, fire_key)
+
+    def fire_key(self, Player):
+        pass
 
     def turn_left(self):
         self.left(10)
@@ -46,10 +50,14 @@ class Player(Turtle):
         if self.ycor() > 230 or self.ycor() < -230:
             self.setheading(-self.heading())
 
+class Bullet(Turtle):
+    pass
+
+
+
 screen = Screen()
 screen.bgcolor("black")
 screen.setup(520,520)
-# Key Binding. Connects key presses and mouse clicks with function calls
 screen.listen()
 
 
