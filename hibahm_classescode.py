@@ -19,6 +19,7 @@ def playing_area():
     pen.goto(-240, 240)
     pen.end_fill()
 
+
 class Player(Turtle):
     def __init__(self, x, y, color, screen, right_key, left_key, fire_key):
         super().__init__()
@@ -31,8 +32,12 @@ class Player(Turtle):
         self.shape("turtle")
 
         self.health = 3
-        self.bullets = []
         self.alive = True
+
+        self.base_color = color
+        self.colors = {3: color, 2: "yellow", 1: "red"}
+
+        self.bullets = []
 
         self.st()
 
@@ -42,15 +47,20 @@ class Player(Turtle):
 
     def fire(self):
         if self.alive:
-            self.bullets.append(Bullet(self.xcor(), self.ycor(), self.heading()))
+            self.bullets.append(Bullet(self))
 
     def turn_left(self):
-        self.left(10)
+        if self.alive:
+            self.left(10)
 
     def turn_right(self):
-        self.right(10)
+        if self.alive:
+            self.right(10)
 
     def move(self):
+        if self.alive == False:
+            return
+
         self.forward(4)
 
         if self.xcor() > 230 or self.xcor() < -230:
@@ -59,7 +69,16 @@ class Player(Turtle):
         if self.ycor() > 230 or self.ycor() < -230:
             self.setheading(-self.heading())
 
+    def take_damage(self):
+        self.health -= 1
+
+        if self.health > 0:
+            self.color(self.colors[self.health])
+        else:
+            self.kill()
+
     def kill(self):
+        self.health = 0
         self.alive = False
         self.hideturtle()
 
@@ -71,22 +90,29 @@ class Bullet(Turtle):
         self.speed(0)
         self.penup()
         self.shape("circle")
-        self.color(player.color)
+
+        self.player = player
+        self.color(player.base_color)
+
         self.goto(player.xcor(), player.ycor())
         self.setheading(player.heading())
         self.forward(10)
-        self.player = player
+
         self.st()
 
-    def move(self):
-        if self.player.fire_key:
-            self.forward(10)
-            if self.xcor() > 235 or self.xcor() < -235 or self.ycor() > 235 or self.ycor() < -235:
-                self.die()
-
+    
     def die(self):
-
         self.hideturtle()
+
+    def move(self):
+        self.forward(10)
+
+        
+        if self.xcor() > 235 or self.xcor() < -235 or self.ycor() > 235 or self.ycor() < -235:
+            self.die()
+            return True
+
+        return False
 
 
 
@@ -98,16 +124,43 @@ screen.listen()
 
 playing_area()
 
-p1 = Player(-100, 0, "purple", screen, "d", "a","w")
-p2 = Player(100, 0, "blue", screen, "Right", "Left","Up")
+p1 = Player(-100, 0, "purple", screen, "d", "a", "w")
+p2 = Player(100, 0, "blue", screen, "Right", "Left", "Up")
+
+players = [p1, p2]
+
+
 
 while p1.alive and p2.alive:
-    p1.move()
-    p2.move()
 
-    new_bullets = []
-    for b in p1.bullets:
-        b.move()
-        
+    for player in players:
+        player.move()
+
+    for player in players:
+        bullets_to_remove = []
+
+        for bullet in player.bullets:
+            bullet.move()
+
+            hit_detected = False
+
+            for other in players:
+                if other != bullet.player and other.alive:
+                    if bullet.distance(other) < 20:
+                        other.take_damage()
+                        bullet.die()
+                        hit_detected = True
+
+            out_of_bounds = (
+                bullet.xcor() > 235 or bullet.xcor() < -235 or
+                bullet.ycor() > 235 or bullet.ycor() < -235
+            )
+
+            if hit_detected or out_of_bounds:
+                bullets_to_remove.append(bullet)
+
+        for bullet in bullets_to_remove:
+            if bullet in player.bullets:
+                player.bullets.remove(bullet)
 
 screen.exitonclick()
